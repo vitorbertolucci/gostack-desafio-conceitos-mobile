@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import {
   SafeAreaView,
@@ -7,49 +7,80 @@ import {
   Text,
   StatusBar,
   StyleSheet,
-  TouchableOpacity,
+  TouchableOpacity
 } from "react-native";
 
+import api from "./services/api";
+
 export default function App() {
+  const [repositories, setRepositories] = useState([]);
+
+  useEffect(() => {
+    api
+      .get("repositories")
+      .then(response => {
+        setRepositories(response.data);
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  }, []);
+
   async function handleLikeRepository(id) {
-    // Implement "Like Repository" functionality
+    try {
+      console.log(id);
+      const result = await api.post(`repositories/${id}/like`);
+
+      const repositoriesCopy = [...repositories];
+      const index = repositoriesCopy.findIndex(
+        repository => repository.id === id
+      );
+
+      if (index !== -1) {
+        repositoriesCopy[index] = result.data;
+        setRepositories(repositoriesCopy);
+      }
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#7159c1" />
       <SafeAreaView style={styles.container}>
-        <View style={styles.repositoryContainer}>
-          <Text style={styles.repository}>Repository 1</Text>
+        {repositories.map(repository => (
+          <View style={styles.repositoryContainer} key={repository.id}>
+            <Text style={styles.repository}>Repository {repository.title}</Text>
 
-          <View style={styles.techsContainer}>
-            <Text style={styles.tech}>
-              ReactJS
-            </Text>
-            <Text style={styles.tech}>
-              Node.js
-            </Text>
-          </View>
+            <View style={styles.techsContainer}>
+              {repository.techs.map(tech => (
+                <Text key={tech} style={styles.tech}>
+                  {tech}
+                </Text>
+              ))}
+            </View>
 
-          <View style={styles.likesContainer}>
-            <Text
-              style={styles.likeText}
-              // Remember to replace "1" below with repository ID: {`repository-likes-${repository.id}`}
-              testID={`repository-likes-1`}
+            <View style={styles.likesContainer}>
+              <Text
+                style={styles.likeText}
+                // Remember to replace "1" below with repository ID: {`repository-likes-${repository.id}`}
+                testID={`repository-likes-${repository.id}`}
+              >
+                {repository.likes} curtida{repository.likes > 1 ? "s" : ""}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => handleLikeRepository(repository.id)}
+              // Remember to replace "1" below with repository ID: {`like-button-${repository.id}`}
+              testID={`like-button-${repository.id}`}
             >
-              3 curtidas
-            </Text>
+              <Text style={styles.buttonText}>Curtir</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => handleLikeRepository(1)}
-            // Remember to replace "1" below with repository ID: {`like-button-${repository.id}`}
-            testID={`like-button-1`}
-          >
-            <Text style={styles.buttonText}>Curtir</Text>
-          </TouchableOpacity>
-        </View>
+        ))}
       </SafeAreaView>
     </>
   );
@@ -58,21 +89,21 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#7159c1",
+    backgroundColor: "#7159c1"
   },
   repositoryContainer: {
     marginBottom: 15,
     marginHorizontal: 15,
     backgroundColor: "#fff",
-    padding: 20,
+    padding: 20
   },
   repository: {
     fontSize: 32,
-    fontWeight: "bold",
+    fontWeight: "bold"
   },
   techsContainer: {
     flexDirection: "row",
-    marginTop: 10,
+    marginTop: 10
   },
   tech: {
     fontSize: 12,
@@ -81,20 +112,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#04d361",
     paddingHorizontal: 10,
     paddingVertical: 5,
-    color: "#fff",
+    color: "#fff"
   },
   likesContainer: {
     marginTop: 15,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between"
   },
   likeText: {
     fontSize: 14,
     fontWeight: "bold",
-    marginRight: 10,
+    marginRight: 10
   },
   button: {
-    marginTop: 10,
+    marginTop: 10
   },
   buttonText: {
     fontSize: 14,
@@ -102,6 +133,6 @@ const styles = StyleSheet.create({
     marginRight: 10,
     color: "#fff",
     backgroundColor: "#7159c1",
-    padding: 15,
-  },
+    padding: 15
+  }
 });
